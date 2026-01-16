@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>건축물 주차대수 계산기</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box; /* padding 포함 */
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #1a252f;
+        }
+
+        .result-box {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #eef2f5;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .result-title {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .result-unit {
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .info-text {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #888;
+            line-height: 1.4;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🚗 주차대수 계산기</h1>
+        
+        <div class="input-group">
+            <label for="buildingType">건축물 용도</label>
+            <select id="buildingType">
+                <option value="none">용도를 선택하세요</option>
+                <option value="living">제1,2종 근린생활시설</option>
+                <option value="culture">문화/집회/종교/판매/운동시설</option>
+                <option value="office">업무시설</option>
+                <option value="house">단독주택</option>
+                <option value="factory">공장</option>
+                <option value="warehouse">창고시설</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="area">시설면적 (전용+공용)</label>
+            <input type="number" id="area" placeholder="면적을 입력하세요 (㎡)" min="0" step="0.01">
+        </div>
+
+        <button onclick="calculateParking()">계산하기</button>
+
+        <div class="result-box">
+            <div class="result-title">필요 주차대수</div>
+            <span id="resultNumber" class="result-value">0</span>
+            <span class="result-unit">대</span>
+        </div>
+
+        <p class="info-text">
+            ※ 본 계산 결과는 「주차장법 시행령」 [별표 1]의 일반 기준을 따릅니다.<br>
+            <strong>※ 실제 인허가 시 해당 지자체(시/군/구)의 '주차장 설치 및 관리 조례'가 우선 적용되므로 반드시 확인이 필요합니다.</strong>
+        </p>
+    </div>
+
+    <script>
+        function calculateParking() {
+            const type = document.getElementById('buildingType').value;
+            const area = parseFloat(document.getElementById('area').value);
+            const resultDisplay = document.getElementById('resultNumber');
+
+            if (type === 'none' || isNaN(area) || area <= 0) {
+                alert("용도를 선택하고 올바른 면적을 입력해주세요.");
+                return;
+            }
+
+            let requiredSpaces = 0;
+
+            // 계산 로직 (주차장법 시행령 별표1 기준 예시)
+            // 지자체 조례에 따라 이 부분의 숫자를 수정해야 합니다.
+            
+            switch(type) {
+                case 'living': // 근린생활시설: 시설면적 200㎡당 1대 (지자체에 따라 134㎡ 또는 150㎡일 수 있음)
+                    requiredSpaces = area / 200;
+                    break;
+                
+                case 'culture': // 위락/문화/집회/판매시설: 시설면적 150㎡당 1대 (지자체에 따라 100㎡일 수 있음)
+                    requiredSpaces = area / 150;
+                    break;
+                
+                case 'office': // 업무시설: 시설면적 100㎡당 1대 (지자체 상이)
+                    requiredSpaces = area / 100;
+                    break;
+
+                case 'factory': // 공장: 시설면적 350㎡당 1대
+                    requiredSpaces = area / 350;
+                    break;
+
+                case 'warehouse': // 창고: 시설면적 400㎡당 1대
+                    requiredSpaces = area / 400;
+                    break;
+
+                case 'house': // 단독주택 (면적에 따른 구간별 계산)
+                    // 예: 50초과 150이하 1대, 150초과시 1대 + (초과분/100)
+                    if (area <= 50) requiredSpaces = 0;
+                    else if (area <= 150) requiredSpaces = 1;
+                    else requiredSpaces = 1 + (area - 150) / 100;
+                    break;
+            }
+
+            // 반올림 처리 로직 (주차장법: 소수점 첫째자리가 0.5 이상이면 1로 봄 = 반올림)
+            // 단, 단독주택의 경우 계산법이 다를 수 있으나 여기서는 통상적인 반올림 적용
+            let finalCount = Math.round(requiredSpaces);
+
+            // 결과 애니메이션 효과 (숫자가 올라가는 효과)
+            animateValue(resultDisplay, 0, finalCount, 500);
+        }
+
+        // 숫자 카운팅 애니메이션 함수
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = end;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+    </script>
+</body>
+</html>
