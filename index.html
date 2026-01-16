@@ -89,7 +89,13 @@
             padding: 1.5rem;
             background-color: #eef2f5;
             border-radius: 8px;
+        }
+
+        .main-result {
             text-align: center;
+            border-bottom: 1px solid #dde4e8;
+            padding-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .result-title {
@@ -107,6 +113,15 @@
         .result-unit {
             font-size: 1rem;
             color: #333;
+        }
+
+        .sub-results {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        .sub-result-item .result-value {
+            font-size: 1.8rem;
         }
 
         .info-text {
@@ -144,14 +159,29 @@
         <button onclick="calculateParking()">계산하기</button>
 
         <div class="result-box">
-            <div class="result-title">필요 주차대수</div>
-            <span id="resultNumber" class="result-value">0</span>
-            <span class="result-unit">대</span>
+            <div class="main-result">
+                <div class="result-title">총 필요 주차대수</div>
+                <span id="resultNumber" class="result-value">0</span>
+                <span class="result-unit">대</span>
+            </div>
+            <div class="sub-results">
+                <div class="sub-result-item">
+                    <div class="result-title">장애인 주차 (3%)</div>
+                    <span id="disabledParking" class="result-value">0</span>
+                    <span class="result-unit">대</span>
+                </div>
+                <div class="sub-result-item">
+                    <div class="result-title">전기차 충전 (5%)</div>
+                    <span id="evParking" class="result-value">0</span>
+                    <span class="result-unit">대</span>
+                </div>
+            </div>
         </div>
 
         <p class="info-text">
-            ※ 본 계산 결과는 「주차장법 시행령」 [별표 1]의 일반 기준을 따릅니다.<br>
-            <strong>※ 실제 인허가 시 해당 지자체(시/군/구)의 '주차장 설치 및 관리 조례'가 우선 적용되므로 반드시 확인이 필요합니다.</strong>
+            ※ 총 주차대수는 「주차장법」 기준이며, 지자체 조례에 따라 다를 수 있습니다.<br>
+            ※ 장애인 주차는 총 주차대수의 3%, 전기차 충전은 5%로 산정(소수점 올림)하였으며, 이는 각각 「장애인등편의법」, 「친환경자동차법」에 따릅니다.<br>
+            <strong>※ 실제 인허가 시 관련 법규 및 지자체 조례를 반드시 확인하세요.</strong>
         </p>
     </div>
 
@@ -160,6 +190,8 @@
             const type = document.getElementById('buildingType').value;
             const area = parseFloat(document.getElementById('area').value);
             const resultDisplay = document.getElementById('resultNumber');
+            const disabledDisplay = document.getElementById('disabledParking');
+            const evDisplay = document.getElementById('evParking');
 
             if (type === 'none' || isNaN(area) || area <= 0) {
                 alert("용도를 선택하고 올바른 면적을 입력해주세요.");
@@ -172,15 +204,15 @@
             // 지자체 조례에 따라 이 부분의 숫자를 수정해야 합니다.
             
             switch(type) {
-                case 'living': // 근린생활시설: 시설면적 200㎡당 1대 (지자체에 따라 134㎡ 또는 150㎡일 수 있음)
+                case 'living': // 근린생활시설: 시설면적 200㎡당 1대
                     requiredSpaces = area / 200;
                     break;
                 
-                case 'culture': // 위락/문화/집회/판매시설: 시설면적 150㎡당 1대 (지자체에 따라 100㎡일 수 있음)
+                case 'culture': // 위락/문화/집회/판매시설: 시설면적 150㎡당 1대
                     requiredSpaces = area / 150;
                     break;
                 
-                case 'office': // 업무시설: 시설면적 100㎡당 1대 (지자체 상이)
+                case 'office': // 업무시설: 시설면적 100㎡당 1대
                     requiredSpaces = area / 100;
                     break;
 
@@ -193,19 +225,27 @@
                     break;
 
                 case 'house': // 단독주택 (면적에 따른 구간별 계산)
-                    // 예: 50초과 150이하 1대, 150초과시 1대 + (초과분/100)
                     if (area <= 50) requiredSpaces = 0;
                     else if (area <= 150) requiredSpaces = 1;
                     else requiredSpaces = 1 + (area - 150) / 100;
                     break;
             }
 
-            // 반올림 처리 로직 (주차장법: 소수점 첫째자리가 0.5 이상이면 1로 봄 = 반올림)
-            // 단, 단독주택의 경우 계산법이 다를 수 있으나 여기서는 통상적인 반올림 적용
-            let finalCount = Math.round(requiredSpaces);
+            // --- 총 주차대수 산정 (소수점 반올림) ---
+            const finalCount = Math.round(requiredSpaces);
 
-            // 결과 애니메이션 효과 (숫자가 올라가는 효과)
+            // --- 추가 주차구역 산정 ---
+            // 1. 장애인 주차 (장애인등편의법): 총 주차대수의 3% 이상 (소수점 올림)
+            const disabledCount = finalCount > 0 ? Math.ceil(finalCount * 0.03) : 0;
+            
+            // 2. 전기차 충전 (친환경자동차법): 총 주차대수의 5% 이상 (소수점 올림, 신축 기준)
+            const evCount = finalCount > 0 ? Math.ceil(finalCount * 0.05) : 0;
+
+
+            // --- 결과 표시 애니메이션 ---
             animateValue(resultDisplay, 0, finalCount, 500);
+            animateValue(disabledDisplay, 0, disabledCount, 500);
+            animateValue(evDisplay, 0, evCount, 500);
         }
 
         // 숫자 카운팅 애니메이션 함수
